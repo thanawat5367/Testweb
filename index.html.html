@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>Code Playground - ทดสอบโค้ด HTML/CSS/JS</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', 'Sarabun', sans-serif;
+    background: #1e1e2e;
+    color: #cdd6f4;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  header {
+    background: #181825;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid #313244;
+    flex-wrap: wrap;
+  }
+  header h1 {
+    font-size: 18px;
+    color: #89b4fa;
+    margin-right: auto;
+  }
+  header h1 span { color: #f38ba8; }
+  button {
+    background: #313244;
+    color: #cdd6f4;
+    border: 1px solid #45475a;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+  button:hover { background: #45475a; }
+  button.primary { background: #89b4fa; color: #1e1e2e; border-color: #89b4fa; font-weight: 600; }
+  button.primary:hover { background: #74c7ec; }
+  button.danger:hover { background: #f38ba8; color: #1e1e2e; }
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .toggle input { cursor: pointer; }
+
+  .main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 2px;
+    background: #313244;
+    min-height: 0;
+  }
+  .editor {
+    display: flex;
+    flex-direction: column;
+    background: #1e1e2e;
+    min-height: 0;
+  }
+  .editor-header {
+    background: #181825;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    border-bottom: 1px solid #313244;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot.html { background: #fab387; }
+  .dot.css { background: #89b4fa; }
+  .dot.js { background: #f9e2af; }
+  .dot.preview { background: #a6e3a1; }
+  .dot.console { background: #cba6f7; }
+  textarea {
+    flex: 1;
+    background: #1e1e2e;
+    color: #cdd6f4;
+    border: none;
+    outline: none;
+    padding: 12px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    resize: none;
+    tab-size: 2;
+  }
+  .preview-wrap {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    min-height: 0;
+  }
+  .preview-wrap .editor-header { background: #181825; color: #cdd6f4; }
+  iframe {
+    flex: 1;
+    border: none;
+    background: #fff;
+    width: 100%;
+    height: 100%;
+  }
+  .console-wrap {
+    grid-column: 1 / 3;
+    background: #11111b;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .console-header {
+    background: #181825;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid #313244;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .console-header button { padding: 2px 10px; font-size: 12px; margin-left: auto; }
+  #console {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 12px;
+    font-family: 'Consolas', monospace;
+    font-size: 13px;
+    min-height: 0;
+  }
+  .log-line {
+    padding: 3px 6px;
+    border-bottom: 1px solid #1e1e2e;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .log-line.log { color: #cdd6f4; }
+  .log-line.info { color: #89b4fa; }
+  .log-line.warn { color: #f9e2af; background: rgba(249,226,175,0.08); }
+  .log-line.error { color: #f38ba8; background: rgba(243,139,168,0.1); }
+  .log-line.system { color: #6c7086; font-style: italic; }
+
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #a6e3a1;
+    color: #1e1e2e;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 800px) {
+    .main { grid-template-columns: 1fr; grid-template-rows: repeat(4, 1fr); }
+    .console-wrap { grid-column: 1; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ Code <span>Playground</span></h1>
+  <button class="primary" id="runBtn">▶ รัน (Ctrl+Enter)</button>
+  <label class="toggle"><input type="checkbox" id="autoRun"> Auto-run</label>
+  <button id="saveBtn">💾 บันทึก</button>
+  <button id="loadBtn">📂 โหลด</button>
+  <button id="shareBtn">🔗 แชร์</button>
+  <button id="resetBtn" class="danger">🗑 ล้าง</button>
+</header>
+
+<div class="main">
+  <div class="editor">
+    <div class="editor-header"><span class="dot html"></span>HTML</div>
+    <textarea id="html" spellcheck="false" placeholder="<h1>สวัสดี</h1>"></textarea>
+  </div>
+  <div class="editor">
+    <div class="editor-header"><span class="dot css"></span>CSS</div>
+    <textarea id="css" spellcheck="false" placeholder="body { color: blue; }"></textarea>
+  </div>
+  <div class="editor">
+    <div class="editor-header"><span class="dot js"></span>JavaScript</div>
+    <textarea id="js" spellcheck="false" placeholder="console.log('Hello!');"></textarea>
+  </div>
+  <div class="preview-wrap">
+    <div class="editor-header"><span class="dot preview"></span>Preview</div>
+    <iframe id="preview" sandbox="allow-scripts allow-modals allow-forms"></iframe>
+  </div>
+  <div class="console-wrap">
+    <div class="console-header">
+      <span class="dot console"></span>Console
+      <button id="clearConsole">ล้าง</button>
+    </div>
+    <div id="console"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const html = $('html'), css = $('css'), js = $('js');
+const preview = $('preview'), consoleEl = $('console');
+const autoRun = $('autoRun');
+
+// โค้ดตัวอย่างเริ่มต้น
+const defaultHTML = `<div class="card">
+  <h1>🚀 ยินดีต้อนรับ!</h1>
+  <p>แก้ไขโค้ดแล้วกด <b>รัน</b> หรือเปิด <b>Auto-run</b></p>
+  <button id="btn">คลิกฉัน</button>
+  <p id="out"></p>
+</div>`;
+const defaultCSS = `body {
+  font-family: system-ui, sans-serif;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+}
+.card {
+  background: white;
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  text-align: center;
+  max-width: 400px;
+}
+h1 { color: #333; margin-bottom: 10px; }
+button {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  margin-top: 10px;
+}
+button:hover { background: #5568d3; }
+#out { margin-top: 15px; color: #666; }`;
+const defaultJS = `let count = 0;
+document.getElementById('btn').addEventListener('click', () => {
+  count++;
+  document.getElementById('out').textContent = \`คลิกแล้ว \${count} ครั้ง\`;
+  console.log('คลิกครั้งที่', count);
+});
+console.log('✅ โหลดสคริปต์สำเร็จ');
+console.warn('นี่คือคำเตือนตัวอย่าง');`;
+
+// โหลดจาก localStorage หรือใช้ค่าเริ่มต้น
+function loadSaved() {
+  html.value = localStorage.getItem('cp_html') ?? defaultHTML;
+  css.value  = localStorage.getItem('cp_css')  ?? defaultCSS;
+  js.value   = localStorage.getItem('cp_js')   ?? defaultJS;
+}
+
+// รันโค้ด
+function run() {
+  consoleEl.innerHTML = '';
+  addLog('system', '▶ กำลังรันโค้ด...');
+
+  // สคริปต์สำหรับจับ console จาก iframe
+  const consoleBridge = `
+<script>
+  (function(){
+    const send = (type, args) => {
+      const msg = args.map(a => {
+        try {
+          if (a instanceof Error) return a.stack || a.message;
+          if (typeof a === 'object') return JSON.stringify(a, null, 2);
+          return String(a);
+        } catch(e) { return String(a); }
+      }).join(' ');
+      parent.postMessage({__console: true, type, msg}, '*');
+    };
+    ['log','info','warn','error'].forEach(m => {
+      const orig = console[m];
+      console[m] = function(){ send(m, [...arguments]); orig && orig.apply(console, arguments); };
+    });
+    window.onerror = (msg, src, line, col, err) => {
+      send('error', ['Error: ' + msg + ' (line ' + line + ')']);
+    };
+    window.addEventListener('unhandledrejection', e => {
+      send('error', ['Unhandled rejection: ' + (e.reason?.message || e.reason)]);
+    });
+  })();
+<\/script>`;
+
+  const doc = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+${consoleBridge}
+<style>${css.value}</style>
+</head>
+<body>
+${html.value}
+<script>
+try {
+${js.value}
+} catch(e) {
+  console.error(e);
+}
+<\/script>
+</body>
+</html>`;
+
+  preview.srcdoc = doc;
+}
+
+// รับข้อความ console จาก iframe
+window.addEventListener('message', e => {
+  if (e.data && e.data.__console) {
+    addLog(e.data.type, e.data.msg);
+  }
+});
+
+function addLog(type, msg) {
+  const div = document.createElement('div');
+  div.className = 'log-line ' + type;
+  const prefix = { log: '', info: 'ℹ ', warn: '⚠ ', error: '✖ ', system: '» ' }[type] || '';
+  div.textContent = prefix + msg;
+  consoleEl.appendChild(div);
+  consoleEl.scrollTop = consoleEl.scrollHeight;
+}
+
+// Toast แจ้งเตือน
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ปุ่มต่างๆ
+$('runBtn').onclick = run;
+$('clearConsole').onclick = () => consoleEl.innerHTML = '';
+
+$('saveBtn').onclick = () => {
+  localStorage.setItem('cp_html', html.value);
+  localStorage.setItem('cp_css', css.value);
+  localStorage.setItem('cp_js', js.value);
+  toast('💾 บันทึกแล้ว');
+};
+
+$('loadBtn').onclick = () => {
+  if (localStorage.getItem('cp_html') !== null) {
+    loadSaved();
+    run();
+    toast('📂 โหลดแล้ว');
+  } else {
+    toast('⚠ ยังไม่มีข้อมูลบันทึก');
+  }
+};
+
+$('resetBtn').onclick = () => {
+  if (confirm('ล้างโค้ดทั้งหมด?')) {
+    html.value = ''; css.value = ''; js.value = '';
+    localStorage.removeItem('cp_html');
+    localStorage.removeItem('cp_css');
+    localStorage.removeItem('cp_js');
+    run();
+    toast('🗑 ล้างแล้ว');
+  }
+};
+
+$('shareBtn').onclick = async () => {
+  const data = { h: html.value, c: css.value, j: js.value };
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+  const url = location.origin + location.pathname + '#code=' + encoded;
+  try {
+    await navigator.clipboard.writeText(url);
+    toast('🔗 คัดลอกลิงก์แล้ว');
+  } catch {
+    prompt('คัดลอก URL นี้:', url);
+  }
+};
+
+// Auto-run
+let timer;
+[html, css, js].forEach(el => {
+  el.addEventListener('input', () => {
+    if (autoRun.checked) {
+      clearTimeout(timer);
+      timer = setTimeout(run, 600);
+    }
+  });
+});
+
+// Tab key ใน textarea
+[html, css, js].forEach(el => {
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const s = el.selectionStart, end = el.selectionEnd;
+      el.value = el.value.slice(0, s) + '  ' + el.value.slice(end);
+      el.selectionStart = el.selectionEnd = s + 2;
+    }
+  });
+});
+
+// Ctrl+Enter รัน
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    run();
+  }
+});
+
+// โหลดจาก URL share
+function loadFromURL() {
+  const hash = location.hash;
+  if (hash.startsWith('#code=')) {
+    try {
+      const data = JSON.parse(decodeURIComponent(escape(atob(hash.slice(6)))));
+      html.value = data.h || '';
+      css.value = data.c || '';
+      js.value = data.j || '';
+      history.replaceState(null, '', location.pathname);
+      return true;
+    } catch(e) { console.error(e); }
+  }
+  return false;
+}
+
+// เริ่มทำงาน
+if (!loadFromURL()) loadSaved();
+run();
+</script>
+</body>
+</html>
